@@ -108,7 +108,7 @@ class Block:
     
 class Blockchain:
     """
-    A blockchain.
+    A blockchain
     """
     
     def __init__(self, chain: List[Block], utxos: List[str]):
