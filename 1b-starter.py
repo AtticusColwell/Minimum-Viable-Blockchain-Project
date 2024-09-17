@@ -1,4 +1,6 @@
 import hashlib
+import random
+import math
 from typing import List, Optional
 
 DIFFICULTY = 0x07FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
@@ -58,7 +60,6 @@ class Transaction:
         hash_object.update(bytes.fromhex(trans_bytes))
         
         self.num = hash_object.hexdigest()
-        pass
 
     # Get the hash of the transaction before signatures; signers need to sign
     # this value!
@@ -100,8 +101,10 @@ class Block:
     # Find a valid nonce such that the hash below is less than the DIFFICULTY
     # constant 
     def mine(self):
-        # TODO
-        pass 
+        self.nonce = random.randint(0, 2**64 - 1)
+
+        while hash(self) > DIFFICULTY:
+            self.nonce = random.randint(0, 2**64 - 1)
     
     # Hash the block
     def hash(self) -> str:
