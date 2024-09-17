@@ -57,7 +57,7 @@ class Transaction:
         
         hash_object.update(bytes.fromhex(trans_bytes))
         
-        self.number = hash_object.hexdigest()
+        self.num = hash_object.hexdigest()
         pass
 
     # Get the hash of the transaction before signatures; signers need to sign
