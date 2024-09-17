@@ -45,12 +45,19 @@ class Transaction:
         self.inputs = inputs
         self.outputs = outputs
         self.sigs = sigs
+        self.num = None
 
         self.update_number()
 
     # Set the transaction number to be SHA256 of self.to_bytes()
     def update_number(self):
-        # TODO
+
+        trans_bytes = self.to_bytes()
+        hash_object = hashlib.sha256()
+        
+        hash_object.update(bytes.fromhex(trans_bytes))
+        
+        self.number = hash_object.hexdigest()
         pass
 
     # Get the hash of the transaction before signatures; signers need to sign
