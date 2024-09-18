@@ -48,6 +48,7 @@ class Transaction:
         self.outputs = outputs
         self.sigs = sigs
         self.num = None
+        self.sig = self.hash_to_sign()
 
         self.update_number()
 
@@ -154,4 +155,5 @@ class State:
 # Build and sign a transaction with the given inputs and outputs
 def build_transaction(inputs, outputs, signing_keys) -> Transaction:
     # TODO
+
     pass
