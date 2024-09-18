@@ -1,6 +1,7 @@
 import hashlib
 import random
 import math
+from nacl.signing import SigningKey
 from typing import List, Optional
 
 DIFFICULTY = 0x07FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
