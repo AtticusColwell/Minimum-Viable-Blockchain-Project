@@ -51,6 +51,7 @@ class Transaction:
         self.signatures = None
         self.num = None
         self.sig = self.hash_to_sign()
+        self.sign_value()
 
         self.update_number()
 
