@@ -160,6 +160,6 @@ class State:
 
 # Build and sign a transaction with the given inputs and outputs
 def build_transaction(inputs, outputs, signing_keys) -> Transaction:
-    # TODO
-
-    pass
+    
+    tx = Transaction(inputs, outputs, signing_keys)
+    return tx
