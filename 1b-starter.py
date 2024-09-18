@@ -48,10 +48,15 @@ class Transaction:
         self.inputs = inputs
         self.outputs = outputs
         self.sigs = sigs
+        self.signatures = None
         self.num = None
         self.sig = self.hash_to_sign()
 
         self.update_number()
+
+    def sign_value(self):
+        for i in self.sigs:
+            signatures.append(i.sign(self.sig))
 
     # Set the transaction number to be SHA256 of self.to_bytes()
     def update_number(self):
