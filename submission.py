@@ -107,6 +107,7 @@ class Block:
         self.nonce = 0
         while int(self.hash, 16) > DIFFICULTY:
             self.nonce += 1
+            self.nonce = hex(self.nonce)[2:]
     
     # Hash the block.
     def hash(self) -> str:
