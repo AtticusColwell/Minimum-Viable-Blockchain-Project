@@ -2,6 +2,8 @@ import hashlib
 import random
 from typing import List, Optional
 from nacl.signing import SigningKey, VerifyKey
+from nacl.exceptions import BadSignatureError
+import nacl.encoding
 
 DIFFICULTY = 0x07FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
 
@@ -207,24 +209,35 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
     if not inputs or not outputs:
         return None
     
+    # Verify input sum equals output sum
     input_sum = sum(inp.output.value for inp in inputs)
     output_sum = sum(out.value for out in outputs)
     if input_sum != output_sum:
         return None
     
-    # Reject transactions with duplicate inputs
+    # Check for duplicate inputs
     input_numbers = [inp.number for inp in inputs]
     if len(input_numbers) != len(set(input_numbers)):
         return None
 
-    # Initialize the transaction with empty signature
+    # Verify that all inputs have the same public key, matching the signing key
+    verify_key = signing_key.verify_key
+    expected_pubkey = verify_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+    
+    if not all(inp.output.pub_key == expected_pubkey for inp in inputs):
+        return None  # Inputs don't match the signing key
+
+    # Create transaction with empty signature
     tx = Transaction(inputs, outputs, "")
 
-    # Sign the transaction bytes
+    # Sign the transaction
     bytes_to_sign = bytes.fromhex(tx.bytes_to_sign())
-    signature = signing_key.sign(bytes_to_sign).signature.hex()
+    try:
+        signature = signing_key.sign(bytes_to_sign).signature.hex()
+    except BadSignatureError:
+        return None
 
-    # Update the transaction with the signature and hash
+    # Update transaction with signature and number
     tx.sig_hex = signature
     tx.update_number()
 
