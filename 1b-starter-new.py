@@ -163,8 +163,10 @@ class Node:
     # Attempt to append a block broadcast on the network; return true if it is
     # possible to add (e.g. could be a fork). Return false otherwise.
     def append(self, block: Block) -> bool:
-        # TODO
-        pass
+        for chain in self.chains:
+            if chain.append(block):
+                return True
+        return False
 
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
