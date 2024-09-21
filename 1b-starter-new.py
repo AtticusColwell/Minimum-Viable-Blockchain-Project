@@ -141,7 +141,9 @@ class Blockchain:
         self.utxos = utxos
     
     def append(self, block: Block) -> bool:
-        # TODO
+        # Check proof work
+        # Check if previous block hash matches
+        # Append the block
         pass
 
 class Node:
