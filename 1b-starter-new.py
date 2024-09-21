@@ -54,7 +54,6 @@ class Transaction:
         self.update_number()
 
     # Set the transaction number to be SHA256 of self.to_bytes().
-    # Set the transaction number to be SHA256 of self.to_bytes()
     def update_number(self):
 
         trans_bytes = self.to_bytes()
