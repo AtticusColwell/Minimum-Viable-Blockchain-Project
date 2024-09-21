@@ -157,8 +157,8 @@ class Node:
     # Create a new chain with the given genesis block. The autograder will give
     # you the genesis block.
     def new_chain(self, genesis: Block):
-        # TODO
-        pass
+        blockchain = Blockchain([genesis], [])
+        self.chains.append(blockchain)
 
     # Attempt to append a block broadcast on the network; return true if it is
     # possible to add (e.g. could be a fork). Return false otherwise.
