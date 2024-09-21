@@ -145,7 +145,7 @@ class Blockchain:
             if inp.number in self.utxos:
                 self.utxos.remove(inp.number)
         for out in block.tx.outputs:
-            self.utxos.append(block.tx.num)
+            self.utxos.append(block.tx.number)
         
         return True
 
