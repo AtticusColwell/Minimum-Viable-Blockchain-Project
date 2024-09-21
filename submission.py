@@ -204,6 +204,14 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
     # tx.update_number()
     # return tx
 
+    if not inputs or not outputs:
+        return None
+    
+    input_sum = sum(inp.output.value for inp in inputs)
+    output_sum = sum(out.value for out in outputs)
+    if input_sum != output_sum:
+        return None
+
     # Initialize the transaction with empty signature
     tx = Transaction(inputs, outputs, "")
 
