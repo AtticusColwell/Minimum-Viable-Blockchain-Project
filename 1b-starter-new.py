@@ -142,9 +142,23 @@ class Blockchain:
     
     def append(self, block: Block) -> bool:
         # Check proof work
-        # Check if previous block hash matches
-        # Append the block
-        pass
+        if block.hash > DIFFICULTY:
+            return False
+
+         # Check if previous block hash matches the last block in the chain
+        last_block = self.chain[-1]
+        if block.prev != last_block.hash():
+            return False
+        
+        # Append the block and update UTXOs
+        self.chain.append(block)
+        for inp in block.tx.inputs:
+            if inp.number in self.utxos:
+                self.utxos.remove(inp.number)
+        for out in block.tx.outputs:
+            self.utxos.append(block.tx.num)
+        
+        return True
 
 class Node:
     """
