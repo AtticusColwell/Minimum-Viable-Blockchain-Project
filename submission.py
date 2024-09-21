@@ -108,16 +108,6 @@ class Block:
 
         while hash(self) > DIFFICULTY:
             self.nonce = random.randint(0, 2**64 - 1)
-
-    '''
-    nonce = 0
-    while True:
-        self.nonce = nonce.to_bytes(4, 'big').hex()
-        block_hash = self.hash()
-        if int(block_hash, 16) <= DIFFICULTY:
-            break
-        nonce += 1
-    '''
     
     # Hash the block.
     def hash(self) -> str:
