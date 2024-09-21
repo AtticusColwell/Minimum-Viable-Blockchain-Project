@@ -130,7 +130,7 @@ class Blockchain:
     
     def append(self, block: Block) -> bool:
         # Check proof work
-        if block.hash > DIFFICULTY:
+        if int(block.hash(), 16) > DIFFICULTY:
             return False
 
          # Check if previous block hash matches the last block in the chain
