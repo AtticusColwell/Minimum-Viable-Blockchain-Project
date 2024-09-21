@@ -171,8 +171,19 @@ class Node:
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
     def build_block(self, tx: Transaction) -> Optional[Block]:
-        # TODO
-        pass
+        # Find the longest chain
+        longest_chain = max(self.chains, key=lambda chain: len(chain.chain))
+        
+        # Validate that no double spending occurs
+        for inp in tx.inputs:
+            if inp.number not in longest_chain.utxos:
+                return None  # Invalid transaction, double spend
+        
+        # Create a new block with the transaction
+        prev_hash = longest_chain.chain[-1].hash()
+        new_block = Block(prev_hash, tx, None)
+        new_block.mine()  # Perform proof-of-work
+        return new_block
 
 # Build and sign a transaction with the given inputs and outputs. If it is
 # impossible to build a valid transaction given the inputs and outputs, you
