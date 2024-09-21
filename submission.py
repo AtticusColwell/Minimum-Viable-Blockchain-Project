@@ -211,6 +211,11 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
     output_sum = sum(out.value for out in outputs)
     if input_sum != output_sum:
         return None
+    
+    # Reject transactions with duplicate inputs
+    input_numbers = [inp.number for inp in inputs]
+    if len(input_numbers) != len(set(input_numbers)):
+        return None
 
     # Initialize the transaction with empty signature
     tx = Transaction(inputs, outputs, "")
