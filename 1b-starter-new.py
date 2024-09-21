@@ -1,4 +1,5 @@
 import hashlib
+import random
 from typing import List, Optional
 from nacl.signing import SigningKey, VerifyKey
 
@@ -104,8 +105,20 @@ class Block:
     # constant. Record the nonce as a hex-encoded string (bytearray.hex(), see
     # Transaction.to_bytes() for an example).
     def mine(self):
-        # TODO
-        pass 
+        self.nonce = random.randint(0, 2**64 - 1)
+
+        while hash(self) > DIFFICULTY:
+            self.nonce = random.randint(0, 2**64 - 1)
+
+    '''
+    nonce = 0
+    while True:
+        self.nonce = nonce.to_bytes(4, 'big').hex()
+        block_hash = self.hash()
+        if int(block_hash, 16) <= DIFFICULTY:
+            break
+        nonce += 1
+    '''
     
     # Hash the block.
     def hash(self) -> str:
