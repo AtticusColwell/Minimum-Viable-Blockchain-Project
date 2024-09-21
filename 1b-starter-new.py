@@ -162,4 +162,9 @@ class Node:
 # should return None. Do not verify that the inputs are unspent.
 def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: SigningKey) -> Optional[Transaction]:
     # TODO
+
+    # init a transaction has "     " signing jey empty
+    #bytes to sign = trasnaction.bytes to sign
+    # signature = pyncal.sign(signingkey, bytes to sign)
+    # new transaction created with same inputs, outputs, signature.hex()
     pass
