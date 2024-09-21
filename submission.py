@@ -191,15 +191,28 @@ class Node:
 # impossible to build a valid transaction given the inputs and outputs, you
 # should return None. Do not verify that the inputs are unspent.
 def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: SigningKey) -> Optional[Transaction]:
-    # TODO
 
-    # Init a transaction has w empty signing key
+    # # Init a transaction has w empty signing key
+    # tx = Transaction(inputs, outputs, "")
+    # # Bytes to sign = transaction.bytes to sign
+    # bytes = tx.bytes_to_sign()
+    # # Sign bytes using signing key
+    # signature = signing_key.sign(bytes)
+    # # Pass in new signature to tx
+    # tx.sig_hex = signature
+    # tx.update_number()
+    # return tx
+
+    # Initialize the transaction with empty signature
     tx = Transaction(inputs, outputs, "")
-    # Bytes to sign = transaction.bytes to sign
-    bytes = tx.bytes_to_sign()
-    # Sign bytes using signing key
-    signature = signing_key.sign(bytes)
-    # Pass in new signature to tx
+
+    # Sign the transaction bytes
+    bytes_to_sign = bytes.fromhex(tx.bytes_to_sign())
+    signature = signing_key.sign(bytes_to_sign).signature.hex()
+
+    # Update the transaction with the signature and hash
     tx.sig_hex = signature
     tx.update_number()
+
     return tx
+
