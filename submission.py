@@ -104,10 +104,9 @@ class Block:
     # constant. Record the nonce as a hex-encoded string (bytearray.hex(), see
     # Transaction.to_bytes() for an example).
     def mine(self):
-        self.nonce = random.randint(0, 2**64 - 1)
-
-        while hash(self) > DIFFICULTY:
-            self.nonce = random.randint(0, 2**64 - 1)
+        self.nonce = 0
+        while int(self.hash, 16) > DIFFICULTY:
+            self.nonce += 1
     
     # Hash the block.
     def hash(self) -> str:
