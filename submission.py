@@ -49,7 +49,7 @@ class Transaction:
         self.inputs = inputs
         self.outputs = outputs
         self.sig_hex = sig_hex
-        self.num = None
+        self.number = None
 
         self.update_number()
 
@@ -61,7 +61,7 @@ class Transaction:
         
         hash_object.update(bytes.fromhex(trans_bytes))
         
-        self.num = hash_object.hexdigest()
+        self.number = hash_object.hexdigest()
 
     # Get the bytes of the transaction before signatures; signers need to sign
     # this value!
