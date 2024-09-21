@@ -163,8 +163,13 @@ class Node:
 def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: SigningKey) -> Optional[Transaction]:
     # TODO
 
-    # init a transaction has "     " signing jey empty
-    #bytes to sign = trasnaction.bytes to sign
-    # signature = pyncal.sign(signingkey, bytes to sign)
-    # new transaction created with same inputs, outputs, signature.hex()
-    pass
+    # Init a transaction has w empty signing key
+    tx = Transaction(inputs, outputs, "")
+    # Bytes to sign = transaction.bytes to sign
+    bytes = tx.bytes_to_sign()
+    # Sign bytes using signing key
+    signature = signing_key.sign(bytes)
+    # Pass in new signature to tx
+    tx.sig_hex = signature
+    tx.update_number()
+    return tx
