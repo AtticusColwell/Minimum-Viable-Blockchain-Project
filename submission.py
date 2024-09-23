@@ -137,22 +137,12 @@ class Blockchain:
         self.utxos = utxos
     
     def append(self, block: Block) -> bool:
-        # Check proof work
-        if int(block.hash(), 16) > DIFFICULTY:
-            return False
-
-         # Check if previous block hash matches the last block in the chain
-        last_block = self.chain[-1]
-        if block.prev != last_block.hash():
-            return False
-        
-        # Append the block and update UTXOs
         self.chain.append(block)
+        
+        # updat
         for inp in block.tx.inputs:
-            if inp.number in self.utxos:
-                self.utxos.remove(inp.number)
-        for out in block.tx.outputs:
-            self.utxos.append(block.tx.number)
+            self.utxos.remove(inp.number)
+        self.utxos.append(block.tx.number)
         
         return True
 
@@ -167,36 +157,80 @@ class Node:
     # Create a new chain with the given genesis block. The autograder will give
     # you the genesis block.
     def new_chain(self, genesis: Block):
-        blockchain = Blockchain([genesis], [])
+        utxos = [genesis.tx.number]  
+        # this above ment to track utxo of genesis
+        blockchain = Blockchain([genesis], utxos)
         self.chains.append(blockchain)
 
     # Attempt to append a block broadcast on the network; return true if it is
     # possible to add (e.g. could be a fork). Return false otherwise.
     def append(self, block: Block) -> bool:
         for chain in self.chains:
-            if chain.append(block):
+            if self.validBlockChecker(block, chain):
+                chain.append(block)
                 return True
+        # forking logic potentially???????
+        new_chain = self._fork_chain(block)
+        if new_chain:
+            self.chains.append(new_chain)
+            return True
         return False
 
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
     def build_block(self, tx: Transaction) -> Optional[Block]:
-        print(tx)
-        for i in self.chains:
-            print(i)
-        # Find the longest chain
         longest_chain = max(self.chains, key=lambda chain: len(chain.chain))
         
-        # Validate that no double spending occurs
-        #for inp in tx.inputs:
-            #if inp.number not in longest_chain.utxos:
-                #return None  # Invalid transaction, double spend
-        
-        # Create a new block with the transaction
+        if not self.validTranChecker(tx, longest_chain):
+            return None
+
         prev_hash = longest_chain.chain[-1].hash()
         new_block = Block(prev_hash, tx, None)
-        new_block.mine()  # Perform proof-of-work
+        new_block.mine()
         return new_block
+    
+    def validTranChecker(self, tx: Transaction, chain: Blockchain) -> bool:
+        input_sum = 0
+        output_sum = sum(out.value for out in tx.outputs)
+
+        for inp in tx.inputs:
+            if inp.number not in chain.utxos:
+                return False  
+            input_sum += inp.output.value
+
+        if input_sum != output_sum:
+            return False  # failure to match
+
+        # verify
+        if tx.inputs:
+            pubkey = tx.inputs[0].output.pub_key
+            verify_key = VerifyKey(bytes.fromhex(pubkey))
+            try:
+                verify_key.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
+            except BadSignatureError:
+                return False
+
+        return True
+
+    def validBlockChecker(self, block: Block, chain: Blockchain) -> bool:
+        if int(block.hash(), 16) > DIFFICULTY:
+            return False  
+        if block.prev != chain.chain[-1].hash():
+            return False  
+        if not self.validTranChecker(block.tx, chain):
+            return False  # fail transaction checks
+        return True
+
+    # potentially new fork logic, working on it
+    def _fork_chain(self, block: Block) -> Optional[Blockchain]:
+        for chain in self.chains:
+            for i, existing_block in enumerate(chain.chain):
+                if existing_block.hash() == block.prev:
+                    new_chain = Blockchain(chain.chain[:i+1].copy(), chain.utxos.copy())
+                    if new_chain.append(block):
+                        return new_chain
+        return None
+
 
 # Build and sign a transaction with the given inputs and outputs. If it is
 # impossible to build a valid transaction given the inputs and outputs, you
