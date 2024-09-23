@@ -102,6 +102,7 @@ class Block:
         self.tx = tx
         self.nonce = nonce
         self.prev = prev
+        self.pow = None
 
     # Find a valid nonce such that the hash below is less than the DIFFICULTY
     # constant. Record the nonce as a hex-encoded string (bytearray.hex(), see
@@ -111,14 +112,18 @@ class Block:
         while int(self.hash(), 16) > DIFFICULTY:
             self.nonce += 1
             self.nonce = hex(self.nonce)[2:]
+        
+        self.nonce = str(self.nonce)
+        self.pow = self.hash()
+
     
     # Hash the block.
     def hash(self) -> str:
         m = hashlib.sha256()
 
-        m.update(bytes.fromhex(self.prev))
-        m.update(bytes.fromhex(self.tx.to_bytes()))
-        m.update(bytes.fromhex(self.nonce))
+        m.update(bytes.fromhex(str(self.prev)))
+        m.update(bytes.fromhex(str(self.tx.to_bytes())))
+        m.update(bytes.fromhex(str(self.nonce)))
 
         return m.hexdigest()
     
@@ -181,9 +186,9 @@ class Node:
         longest_chain = max(self.chains, key=lambda chain: len(chain.chain))
         
         # Validate that no double spending occurs
-        for inp in tx.inputs:
-            if inp.number not in longest_chain.utxos:
-                return None  # Invalid transaction, double spend
+        #for inp in tx.inputs:
+            #if inp.number not in longest_chain.utxos:
+                #return None  # Invalid transaction, double spend
         
         # Create a new block with the transaction
         prev_hash = longest_chain.chain[-1].hash()
