@@ -108,7 +108,7 @@ class Block:
     # Transaction.to_bytes() for an example).
     def mine(self):
         self.nonce = 0
-        while int(self.hash, 16) > DIFFICULTY:
+        while int(self.hash(), 16) > DIFFICULTY:
             self.nonce += 1
             self.nonce = hex(self.nonce)[2:]
     
