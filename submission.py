@@ -100,7 +100,7 @@ class Block:
 
     def __init__(self, prev: str, tx: Transaction, nonce: Optional[str]):
         self.tx = tx
-        self.nonce = nonce if nonce is not None else '0'
+        self.nonce = nonce if nonce is not None else '0' * 16
         self.prev = prev
         self.pow = None
 
@@ -108,10 +108,10 @@ class Block:
     # constant. Record the nonce as a hex-encoded string (bytearray.hex(), see
     # Transaction.to_bytes() for an example).
     def mine(self):
-        nonce_i = 0
+        nonce_int = 0
         while int(self.hash(), 16) > DIFFICULTY:
-            nonce_i += 1
-            self.nonce = f'{nonce_i:x}'  # get rid of 0x
+            nonce_int += 1
+            self.nonce = f'{nonce_int:016x}'  # 16 total lengt
         self.pow = self.hash()
 
     def hash(self) -> str:
@@ -120,11 +120,8 @@ class Block:
         m.update(bytes.fromhex(self.prev))
         m.update(bytes.fromhex(self.tx.to_bytes()))
         
-        nonce_hex = self.nonce if self.nonce else '0'
-        if len(nonce_hex) % 2 != 0:
-            nonce_hex = '0' + nonce_hex
-        
-        print(f"Nonce (hex): {nonce_hex}")  # debug reasonss
+        nonce_hex = self.nonce if self.nonce else '0' * 16
+        print(f"Nonce (hex): {nonce_hex}")  # debug
         m.update(bytes.fromhex(nonce_hex))
 
         return m.hexdigest()
@@ -184,6 +181,9 @@ class Node:
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
     def build_block(self, tx: Transaction) -> Optional[Block]:
+        print(tx)
+        for i in self.chains:
+            print(i)
         # Find the longest chain
         longest_chain = max(self.chains, key=lambda chain: len(chain.chain))
         
@@ -250,4 +250,3 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
     tx.update_number()
 
     return tx
-
