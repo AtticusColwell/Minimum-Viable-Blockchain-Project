@@ -100,7 +100,7 @@ class Block:
 
     def __init__(self, prev: str, tx: Transaction, nonce: Optional[str]):
         self.tx = tx
-        self.nonce = nonce
+        self.nonce = nonce if nonce is not None else '0'
         self.prev = prev
         self.pow = None
 
@@ -108,22 +108,24 @@ class Block:
     # constant. Record the nonce as a hex-encoded string (bytearray.hex(), see
     # Transaction.to_bytes() for an example).
     def mine(self):
-        self.nonce = 0
+        nonce_i = 0
         while int(self.hash(), 16) > DIFFICULTY:
-            self.nonce += 1
-            self.nonce = hex(self.nonce)[2:]
-        
-        self.nonce = str(self.nonce)
+            nonce_i += 1
+            self.nonce = f'{nonce_i:x}'  # get rid of 0x
         self.pow = self.hash()
 
-    
-    # Hash the block.
     def hash(self) -> str:
         m = hashlib.sha256()
 
-        m.update(bytes.fromhex(str(self.prev)))
-        m.update(bytes.fromhex(str(self.tx.to_bytes())))
-        m.update(bytes.fromhex(str(self.nonce)))
+        m.update(bytes.fromhex(self.prev))
+        m.update(bytes.fromhex(self.tx.to_bytes()))
+        
+        nonce_hex = self.nonce if self.nonce else '0'
+        if len(nonce_hex) % 2 != 0:
+            nonce_hex = '0' + nonce_hex
+        
+        print(f"Nonce (hex): {nonce_hex}")  # debug reasonss
+        m.update(bytes.fromhex(nonce_hex))
 
         return m.hexdigest()
     
