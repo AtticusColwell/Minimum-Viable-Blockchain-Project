@@ -121,7 +121,7 @@ class Block:
         m.update(bytes.fromhex(self.tx.to_bytes()))
         
         nonce_hex = self.nonce if self.nonce else '0' * 16
-        print(f"Nonce (hex): {nonce_hex}")  # debug
+        # print(f"Nonce (hex): {nonce_hex}")  # debug
         m.update(bytes.fromhex(nonce_hex))
 
         return m.hexdigest()
@@ -137,14 +137,18 @@ class Blockchain:
         self.utxos = utxos
     
     def append(self, block: Block) -> bool:
-        self.chain.append(block)
-        
-        # updat
         for inp in block.tx.inputs:
+            if inp.number not in self.utxos:
+                return False  # Reject the block if any input is not in the UTXO set
             self.utxos.remove(inp.number)
+
+        # Add the new output to the UTXO set
         self.utxos.append(block.tx.number)
         
+        # Finally, append the block to the chain
+        self.chain.append(block)
         return True
+
 
 class Node:
     """
@@ -193,15 +197,19 @@ class Node:
         input_sum = 0
         output_sum = sum(out.value for out in tx.outputs)
 
+        used_utxos = set()
+
         for inp in tx.inputs:
-            if inp.number not in chain.utxos:
-                return False  
+            # Check for double spending: ensure each input is not already used
+            if inp.number not in chain.utxos or inp.number in used_utxos:
+                return False  # Reject double-spent inputs
             input_sum += inp.output.value
+            used_utxos.add(inp.number)
 
         if input_sum != output_sum:
-            return False  # failure to match
+            return False  # Ensure input and output sums match
 
-        # verify
+        # Verify the signature
         if tx.inputs:
             pubkey = tx.inputs[0].output.pub_key
             verify_key = VerifyKey(bytes.fromhex(pubkey))
@@ -211,6 +219,7 @@ class Node:
                 return False
 
         return True
+
 
     def validBlockChecker(self, block: Block, chain: Blockchain) -> bool:
         if int(block.hash(), 16) > DIFFICULTY:
@@ -226,10 +235,12 @@ class Node:
         for chain in self.chains:
             for i, existing_block in enumerate(chain.chain):
                 if existing_block.hash() == block.prev:
+                    # Create a new chain starting from this block
                     new_chain = Blockchain(chain.chain[:i+1].copy(), chain.utxos.copy())
-                    if new_chain.append(block):
+                    if self.validBlockChecker(block, new_chain) and new_chain.append(block):
                         return new_chain
         return None
+
 
 
 # Build and sign a transaction with the given inputs and outputs. If it is
