@@ -171,14 +171,23 @@ class Node:
     def append(self, block: Block) -> bool:
         for chain in self.chains:
             if self.validBlockChecker(block, chain):
-                chain.append(block)
+                # Remove all inputs (spent UTXOs) from the UTXO set
+                for inp in block.tx.inputs:
+                    if inp.number not in chain.utxos:
+                        return False  # Reject if the UTXO doesn't exist
+                    chain.utxos.remove(inp.number)
+
+                # Add all outputs (new UTXOs) to the UTXO set
+                for out in block.tx.outputs:
+                    chain.utxos.append(block.tx.number)
+
+                # Append the block to the chain
+                chain.chain.append(block)
                 return True
-        # forking logic potentially???????
-        new_chain = self._fork_chain(block)
-        if new_chain:
-            self.chains.append(new_chain)
-            return True
+
+        # If no valid chain found, return False
         return False
+
 
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
@@ -200,16 +209,17 @@ class Node:
         used_utxos = set()
         
         for inp in tx.inputs:
-            # Check for double spending: ensure each input is not already used
+            # Check if the input is already spent or not present in the UTXO set
             if inp.number not in chain.utxos or inp.number in used_utxos:
-                return False  # Reject double-spent inputs
+                return False  # Reject if it's double-spent or not in the UTXO set
             input_sum += inp.output.value
-            used_utxos.add(inp.number)
+            used_utxos.add(inp.number)  # Mark this UTXO as used for this transaction
 
+        # Ensure input sum equals output sum for UTXO splitting/merging
         if input_sum != output_sum:
-            return False  # Ensure input and output sums match
+            return False  # Reject if the sums don't match
 
-        # Verify the signature
+        # Verify the transaction's signature
         if tx.inputs:
             pubkey = tx.inputs[0].output.pub_key
             verify_key = VerifyKey(bytes.fromhex(pubkey))
