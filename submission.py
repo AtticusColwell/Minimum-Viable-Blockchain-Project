@@ -216,12 +216,8 @@ class Node:
         output_sum = sum(out.value for out in tx.outputs)
 
         used_utxos = set()
-<<<<<<< HEAD
-        
-=======
 
         # Iterate over each input in the transaction
->>>>>>> b45bde159519b111e264a1b23d0d431c3ce1978f
         for inp in tx.inputs:
             # Check if the input's transaction number exists in the UTXO set
             if inp.number not in chain.utxos or inp.number in used_utxos:
