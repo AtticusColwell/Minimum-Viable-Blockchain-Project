@@ -214,31 +214,61 @@ class Node:
         return new_block
     
     def validTranChecker(self, tx: Transaction, chain: Blockchain, is_fork=False) -> bool:
+        # Debugging information
         print(f"Checking validity of transaction with number: {tx.number}")
         print(f"UTXO set: {chain.utxos}")
         print(f"Transaction inputs: {[(inp.number, inp.output.value) for inp in tx.inputs]}")
         print(f"Transaction outputs: {[(out.value, out.pub_key) for out in tx.outputs]}")
-    
+
         input_sum = 0
         output_sum = sum(out.value for out in tx.outputs)
+
         used_utxos = set()
 
+        # Iterate over each input in the transaction
         for inp in tx.inputs:
+            # If the transaction is part of a fork, allow inputs that are not in the UTXO set
             if inp.number not in chain.utxos:
                 if is_fork:
                     print(f"Input {inp.number} not in UTXO set, but allowing it for fork")
                 else:
                     print(f"Input {inp.number} is not in UTXO set")
                     return False
+
             if inp.number in used_utxos:
                 print(f"Input {inp.number} is already used in this transaction")
-                return False
-            input_sum += inp.output.value
-            used_utxos.add(inp.number)
+                return False  # Reject double-spent inputs
 
+            # Find the referenced transaction in the blockchain
+            referenced_tx = None
+            for block in chain.chain:
+                if block.tx.number == inp.number:
+                    referenced_tx = block.tx
+                    break
+
+            # Check if the referenced transaction exists
+            if not referenced_tx:
+                print(f"Referenced transaction {inp.number} does not exist")
+                return False  # Reject if the referenced transaction doesn't exist
+
+            # Ensure the referenced transaction's output matches the input's provided public key and value
+            valid_output_found = False
+            for out in referenced_tx.outputs:
+                if out.pub_key == inp.output.pub_key and out.value == inp.output.value:
+                    valid_output_found = True
+                    input_sum += inp.output.value  # Add to input sum if valid
+                    break
+
+            if not valid_output_found:
+                print(f"Referenced output for input {inp.number} does not match")
+                return False  # Reject if the referenced output does not match
+
+            used_utxos.add(inp.number)  # Mark this UTXO as used for this transaction
+
+        # Ensure input sum equals output sum for UTXO splitting/merging
         if input_sum != output_sum:
             print(f"Input sum ({input_sum}) does not match output sum ({output_sum})")
-            return False
+            return False  # Reject if the sums don't match
 
         # Verify the transaction's signature
         pubkey = tx.inputs[0].output.pub_key
@@ -251,6 +281,7 @@ class Node:
 
         print("Transaction is valid")
         return True
+
 
 
 
