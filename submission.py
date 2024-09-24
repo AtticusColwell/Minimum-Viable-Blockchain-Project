@@ -188,12 +188,14 @@ class Node:
                 chain.chain.append(block)
                 return True
 
-        # If no valid chain found, handle fork
+        print("No valid chain found. Attempting to fork...")
         forked_chain = self._fork_chain(block)
         if forked_chain:
+            print("Forking successful. New chain created.")
             self.chains.append(forked_chain)
             return True
-        
+    
+        print("Forking failed. Block cannot be appended.")
         return False
 
 
@@ -211,45 +213,32 @@ class Node:
         new_block.mine()
         return new_block
     
-    def validTranChecker(self, tx: Transaction, chain: Blockchain) -> bool:
+    def validTranChecker(self, tx: Transaction, chain: Blockchain, is_fork=False) -> bool:
+        print(f"Checking validity of transaction with number: {tx.number}")
+        print(f"UTXO set: {chain.utxos}")
+        print(f"Transaction inputs: {[(inp.number, inp.output.value) for inp in tx.inputs]}")
+        print(f"Transaction outputs: {[(out.value, out.pub_key) for out in tx.outputs]}")
+    
         input_sum = 0
         output_sum = sum(out.value for out in tx.outputs)
-
         used_utxos = set()
 
-        # Iterate over each input in the transaction
         for inp in tx.inputs:
-            # Check if the input's transaction number exists in the UTXO set
-            if inp.number not in chain.utxos or inp.number in used_utxos:
-                return False  # Reject if it's double-spent or not in the UTXO set
+            if inp.number not in chain.utxos:
+                if is_fork:
+                    print(f"Input {inp.number} not in UTXO set, but allowing it for fork")
+                else:
+                    print(f"Input {inp.number} is not in UTXO set")
+                    return False
+            if inp.number in used_utxos:
+                print(f"Input {inp.number} is already used in this transaction")
+                return False
+            input_sum += inp.output.value
+            used_utxos.add(inp.number)
 
-            # Find the referenced transaction in the blockchain
-            referenced_tx = None
-            for block in chain.chain:
-                if block.tx.number == inp.number:
-                    referenced_tx = block.tx
-                    break
-            
-            # Check if the referenced transaction exists
-            if not referenced_tx:
-                return False  # Reject if the referenced transaction doesn't exist
-            
-            # Ensure the referenced transaction's output matches the input's provided public key and value
-            valid_output_found = False
-            for out in referenced_tx.outputs:
-                if out.pub_key == inp.output.pub_key and out.value == inp.output.value:
-                    valid_output_found = True
-                    input_sum += inp.output.value  # Add to input sum if valid
-                    break
-
-            if not valid_output_found:
-                return False  # Reject if the referenced output does not match
-
-            used_utxos.add(inp.number)  # Mark this UTXO as used for this transaction
-
-        # Ensure input sum equals output sum for UTXO splitting/merging
         if input_sum != output_sum:
-            return False  # Reject if the sums don't match
+            print(f"Input sum ({input_sum}) does not match output sum ({output_sum})")
+            return False
 
         # Verify the transaction's signature
         pubkey = tx.inputs[0].output.pub_key
@@ -257,30 +246,58 @@ class Node:
         try:
             verify_key.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
         except BadSignatureError:
+            print("Invalid signature")
             return False
 
+        print("Transaction is valid")
         return True
 
 
 
-    def validBlockChecker(self, block: Block, chain: Blockchain) -> bool:
+    def validBlockChecker(self, block: Block, chain: Blockchain, is_fork=False) -> bool:
+        print(f"Checking validity of block with prev hash: {block.prev}")
+        print(f"Block hash: {block.hash()}")
+        print(f"Difficulty: {DIFFICULTY}")
+        print(f"Last block hash in chain: {chain.chain[-1].hash()}")
+    
         if int(block.hash(), 16) > DIFFICULTY:
-            return False  
+            print("Block hash does not meet difficulty requirement")
+            return False
         if block.prev != chain.chain[-1].hash():
-            return False  
-        if not self.validTranChecker(block.tx, chain):
-            return False  # fail transaction checks
+            print(f"Block prev hash {block.prev} does not match last block hash {chain.chain[-1].hash()}")
+            return False
+        if not self.validTranChecker(block.tx, chain, is_fork):
+            print("Transaction in block is not valid")
+            return False
+        print("Block is valid")
         return True
 
-    # potentially new fork logic, working on it
     def _fork_chain(self, block: Block) -> Optional[Blockchain]:
+        print(f"Attempting to fork chain for block with prev hash: {block.prev}")
         for chain in self.chains:
             for i, existing_block in enumerate(chain.chain):
                 if existing_block.hash() == block.prev:
-                    # Create a new chain starting from this block
-                    new_chain = Blockchain(chain.chain[:i+1].copy(), chain.utxos.copy())
-                    if self.validBlockChecker(block, new_chain) and new_chain.append(block):
-                        return new_chain
+                    print(f"Found matching block at index {i} in chain")
+                    # Create a new UTXO set up to the fork point
+                    forked_utxos = set()
+                    for j in range(i + 1):
+                        forked_utxos.add(chain.chain[j].tx.number)
+                        for inp in chain.chain[j].tx.inputs:
+                            if inp.number in forked_utxos:
+                                forked_utxos.remove(inp.number)
+                    new_chain = Blockchain(chain.chain[:i+1].copy(), list(forked_utxos))
+                    print(f"New chain length: {len(new_chain.chain)}")
+                    print(f"New chain UTXO set: {new_chain.utxos}")
+                    if self.validBlockChecker(block, new_chain, is_fork=True):
+                        print("Block is valid for the new forked chain")
+                        if new_chain.append(block):
+                            print("Block successfully appended to new chain")
+                            return new_chain
+                        else:
+                            print("Failed to append block to new chain")
+                    else:
+                        print("Block is not valid for the new forked chain")
+        print("No valid fork found")
         return None
 
 
