@@ -171,14 +171,18 @@ class Node:
     def append(self, block: Block) -> bool:
         for chain in self.chains:
             if self.validBlockChecker(block, chain):
+                used_utxos = set()
+                
                 # Remove all inputs (spent UTXOs) from the UTXO set
                 for inp in block.tx.inputs:
-                    if inp.number not in chain.utxos:
-                        return False  # Reject if the UTXO doesn't exist
+                    if inp.number not in chain.utxos or inp.number in used_utxos:
+                        return False  # Reject if the UTXO doesn't exist or was already used in this block
                     chain.utxos.remove(inp.number)
+                    used_utxos.add(inp.number)
 
-                # Add the new output to the UTXO set
-                chain.utxos.append(block.tx.number)
+                # Add all outputs (new UTXOs) to the UTXO set
+                for out in block.tx.outputs:
+                    chain.utxos.append(block.tx.number)
 
                 # Append the block to the chain
                 chain.chain.append(block)
@@ -191,6 +195,7 @@ class Node:
             return True
         
         return False
+
 
 
     # Build a block on the longest chain you are currently tracking. If the
