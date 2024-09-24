@@ -198,7 +198,7 @@ class Node:
         output_sum = sum(out.value for out in tx.outputs)
 
         used_utxos = set()
-
+        
         for inp in tx.inputs:
             # Check for double spending: ensure each input is not already used
             if inp.number not in chain.utxos or inp.number in used_utxos:
