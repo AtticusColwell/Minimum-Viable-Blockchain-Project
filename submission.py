@@ -171,11 +171,14 @@ class Node:
     def append(self, block: Block) -> bool:
         for chain in self.chains:
             if self.validBlockChecker(block, chain):
+                used_utxos = set()
+                
                 # Remove all inputs (spent UTXOs) from the UTXO set
                 for inp in block.tx.inputs:
-                    if inp.number not in chain.utxos:
-                        return False  # Reject if the UTXO doesn't exist
+                    if inp.number not in chain.utxos or inp.number in used_utxos:
+                        return False  # Reject if the UTXO doesn't exist or was already used in this block
                     chain.utxos.remove(inp.number)
+                    used_utxos.add(inp.number)
 
                 # Add all outputs (new UTXOs) to the UTXO set
                 for out in block.tx.outputs:
@@ -185,8 +188,14 @@ class Node:
                 chain.chain.append(block)
                 return True
 
-        # If no valid chain found, return False
+        # If no valid chain found, handle fork
+        forked_chain = self._fork_chain(block)
+        if forked_chain:
+            self.chains.append(forked_chain)
+            return True
+        
         return False
+
 
 
     # Build a block on the longest chain you are currently tracking. If the
@@ -207,12 +216,39 @@ class Node:
         output_sum = sum(out.value for out in tx.outputs)
 
         used_utxos = set()
+<<<<<<< HEAD
         
+=======
+
+        # Iterate over each input in the transaction
+>>>>>>> b45bde159519b111e264a1b23d0d431c3ce1978f
         for inp in tx.inputs:
-            # Check if the input is already spent or not present in the UTXO set
+            # Check if the input's transaction number exists in the UTXO set
             if inp.number not in chain.utxos or inp.number in used_utxos:
                 return False  # Reject if it's double-spent or not in the UTXO set
-            input_sum += inp.output.value
+
+            # Find the referenced transaction in the blockchain
+            referenced_tx = None
+            for block in chain.chain:
+                if block.tx.number == inp.number:
+                    referenced_tx = block.tx
+                    break
+            
+            # Check if the referenced transaction exists
+            if not referenced_tx:
+                return False  # Reject if the referenced transaction doesn't exist
+            
+            # Ensure the referenced transaction's output matches the input's provided public key and value
+            valid_output_found = False
+            for out in referenced_tx.outputs:
+                if out.pub_key == inp.output.pub_key and out.value == inp.output.value:
+                    valid_output_found = True
+                    input_sum += inp.output.value  # Add to input sum if valid
+                    break
+
+            if not valid_output_found:
+                return False  # Reject if the referenced output does not match
+
             used_utxos.add(inp.number)  # Mark this UTXO as used for this transaction
 
         # Ensure input sum equals output sum for UTXO splitting/merging
@@ -220,15 +256,15 @@ class Node:
             return False  # Reject if the sums don't match
 
         # Verify the transaction's signature
-        if tx.inputs:
-            pubkey = tx.inputs[0].output.pub_key
-            verify_key = VerifyKey(bytes.fromhex(pubkey))
-            try:
-                verify_key.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
-            except BadSignatureError:
-                return False
+        pubkey = tx.inputs[0].output.pub_key
+        verify_key = VerifyKey(bytes.fromhex(pubkey))
+        try:
+            verify_key.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
+        except BadSignatureError:
+            return False
 
         return True
+
 
 
     def validBlockChecker(self, block: Block, chain: Blockchain) -> bool:
