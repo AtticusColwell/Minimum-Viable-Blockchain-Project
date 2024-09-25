@@ -59,11 +59,12 @@ class Transaction:
     # Set the transaction number to be SHA256 of self.to_bytes().
     def update_number(self):
 
-        trans_bytes = self.to_bytes()
+        trans_bts = self.to_bytes()
         hash_object = hashlib.sha256()
         
-        hash_object.update(bytes.fromhex(trans_bytes))
+        hash_object.update(bytes.fromhex(trans_bts))
         
+        # .hexdigest() was a function taken from stackoverflow
         self.number = hash_object.hexdigest()
 
     # Get the bytes of the transaction before signatures; signers need to sign
@@ -100,8 +101,10 @@ class Block:
 
     def __init__(self, prev: str, tx: Transaction, nonce: Optional[str]):
         self.tx = tx
-        self.nonce = nonce if nonce is not None else '0' * 16
+        self.nonce = nonce if nonce is not None else '0' * 16 # we chose 16 as an arbitrary number of 0s, could have been longer
         self.prev = prev
+
+        # proof of wok var
         self.pow = None
 
     # Find a valid nonce such that the hash below is less than the DIFFICULTY
@@ -109,7 +112,7 @@ class Block:
     # Transaction.to_bytes() for an example).
     def mine(self):
         nonce_int = 0
-        while int(self.hash(), 16) > DIFFICULTY:
+        while int(self.hash(), 16) > DIFFICULTY: # dif comparison as we need to ensure nonce is less than diff
             nonce_int += 1
             self.nonce = f'{nonce_int:016x}'  # 16 total lengt
         self.pow = self.hash()
@@ -120,7 +123,7 @@ class Block:
         m.update(bytes.fromhex(self.prev))
         m.update(bytes.fromhex(self.tx.to_bytes()))
         
-        nonce_hex = self.nonce if self.nonce else '0' * 16
+        nonce_hex = self.nonce if self.nonce else '0' * 16 # may be able to remove this now as its irrelevant after _init_ update.
         # print(f"Nonce (hex): {nonce_hex}")  # debug
         m.update(bytes.fromhex(nonce_hex))
 
