@@ -206,7 +206,7 @@ class Node:
     # Build a block on the longest chain you are currently tracking. If the
     # transaction is invalid (e.g. double spend), return None.
     def build_block(self, tx: Transaction) -> Optional[Block]:
-        longest_chain = max(self.chains, key=lambda chain: len(chain.chain)) # simplified version
+        longest_chain = max(self.chains, key=lambda chain: len(chain.chain)) # simplified version cited from python tutorial w3 schools
         
         if not self.validTranChecker(tx, longest_chain):
             return None
@@ -229,7 +229,8 @@ class Node:
             # is this a fork? checker
             #if ip.number not in chain.utxos:
                 #if isFork:
-                    #print(f" {ip.number} but fork)
+                    #print(f" {ip.number} but fork")
+                    
                 #else:
                     #print(f"{ip.number} is not in UTXO")
                     #return False
