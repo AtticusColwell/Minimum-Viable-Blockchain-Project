@@ -270,9 +270,9 @@ class Node:
 
         # verification
         pubkey = tx.inputs[0].output.pub_key
-        verify_key = VerifyKey(bytes.fromhex(pubkey))
+        vkey = VerifyKey(bytes.fromhex(pubkey))
         try:
-            verify_key.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
+            vkey.verify(bytes.fromhex(tx.bytes_to_sign()), bytes.fromhex(tx.sig_hex))
 
         # cited this from the pynacl docs
         except BadSignatureError:
@@ -321,17 +321,14 @@ class Node:
 # impossible to build a valid transaction given the inputs and outputs, you
 # should return None. Do not verify that the inputs are unspent.
 def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: SigningKey) -> Optional[Transaction]:
-
+    # prototyped logic
     # # Init a transaction has w empty signing key
-    # tx = Transaction(inputs, outputs, "")
     # # Bytes to sign = transaction.bytes to sign
-    # bytes = tx.bytes_to_sign()
     # # Sign bytes using signing key
-    # signature = signing_key.sign(bytes)
+    # # signature = signing_key.sign(bytes)
     # # Pass in new signature to tx
-    # tx.sig_hex = signature
-    # tx.update_number()
-    # return tx
+    # # tx.update_number()
+    # # return tx
 
     if not inputs or not outputs:
         return None
@@ -343,19 +340,19 @@ def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: S
         return None
     
     # find repeat inputs
-    input_numbers = [inp.number for inp in inputs]
+    input_numbers = [inp.number for inp in inputs] # cited w3schools python method 
     if len(input_numbers) != len(set(input_numbers)):
         return None
 
     # Vmatch sign and public key
-    verify_key = signing_key.verify_key
-    expected_pubkey = verify_key.encode(encoder=nacl.encoding.HexEncoder).decode()
+    vkey = signing_key.verify_key
+    expected_pubkey = vkey.encode(encoder=nacl.encoding.HexEncoder).decode()
     
     if not all(i.output.pub_key == expected_pubkey for i in inputs):
         return None  # failed to match
 
     # start to build transaction rpcoess (no sign to start)
-    tx = Transaction(inputs, outputs, "")
+    tx = Transaction(inputs, outputs, "") 
 
     # sign it
     bytes_to_sign = bytes.fromhex(tx.bytes_to_sign())
