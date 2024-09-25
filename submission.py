@@ -321,17 +321,6 @@ class Node:
 # should return None. Do not verify that the inputs are unspent.
 def build_transaction(inputs: List[Input], outputs: List[Output], signing_key: SigningKey) -> Optional[Transaction]:
 
-    # # Init a transaction has w empty signing key
-    # tx = Transaction(inputs, outputs, "")
-    # # Bytes to sign = transaction.bytes to sign
-    # bytes = tx.bytes_to_sign()
-    # # Sign bytes using signing key
-    # signature = signing_key.sign(bytes)
-    # # Pass in new signature to tx
-    # tx.sig_hex = signature
-    # tx.update_number()
-    # return tx
-
     if not inputs or not outputs:
         return None
     
